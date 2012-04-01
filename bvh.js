@@ -1,3 +1,31 @@
+var __bind = function(fn, me) {
+  return function() {
+    return fn.apply(me, arguments);
+  };
+};
+
+Uint8Array.prototype.max = function() {
+  var max = this[0];
+  for (var i = 0; i < this.length; i++) {
+    if (this[i] > max) {
+      max = this[i];
+    }
+  }
+  return max;
+};
+
+Uint8Array.prototype.sum = function() {
+  var sum = 0;
+  for (var i = 0; i < this.length; i++) {
+    sum += this[i];
+  }
+  return sum;
+};
+
+Uint8Array.prototype.average = function() {
+  return this.sum() / this.length;
+};
+
 var CHANNELS = {
   X_POSITION: 1,
   Y_POSITION: 2,
@@ -5,12 +33,6 @@ var CHANNELS = {
   X_ROTATION: 4,
   Y_ROTATION: 5,
   Z_ROTATION: 6
-};
-
-var __bind = function(fn, me) {
-  return function() {
-    return fn.apply(me, arguments);
-  };
 };
 
 var Node = (function() {
@@ -236,7 +258,6 @@ var SoundPlayer = (function() {
       self.context.decodeAudioData(xhr.response, function(buffer) {
         self.source = self.context.createBufferSource();
         self.source.buffer = buffer;
-        self.source.connect(self.context.destination);
         callback();
       }, function() {
         console.log("Failed to load sounds.");
@@ -245,10 +266,20 @@ var SoundPlayer = (function() {
     xhr.send();    
   };
   SoundPlayer.prototype.play = function() {
+    this.analyser = this.context.createAnalyser();
+    this.source.connect(this.analyser);
+    this.analyser.connect(this.context.destination);
+    
     this.source.noteOn(0);
   };
   SoundPlayer.prototype.isReady = function() {
     return !!this.source;
+  };
+  SoundPlayer.prototype.fft = function() {
+    var freqByteData = new Uint8Array(this.analyser.frequencyBinCount);
+    //analyser.getByteTimeDomainData(freqByteData);
+    this.analyser.getByteFrequencyData(freqByteData);
+    return freqByteData.average();
   };
   
   return SoundPlayer;
@@ -346,6 +377,8 @@ var Perfume = (function() {
       this.audio.play();
     }
     this.prevPos = pos;
+    
+    this.noise = this.audio.fft();
 
     for (var i = 0; i < this.bvhs.length; i++) {
       var bvh = this.bvhs[i];
@@ -356,10 +389,13 @@ var Perfume = (function() {
         var joint = bvh.joints[j];
         
         object.position.copy(joint.translation);
+        object.position.x += (Math.random() - 0.5) * this.noise * 0.01;
+        object.position.y += (Math.random() - 0.5) * this.noise * 0.01;
+        object.position.z += (Math.random() - 0.5) * this.noise * 0.01;
         object.rotation.copy(joint.rotation);
       }
     }
-
+    
     this.render();
     this.stats.update();
   };
