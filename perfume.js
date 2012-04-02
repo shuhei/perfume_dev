@@ -305,7 +305,7 @@ var Perfume = (function() {
     } else {
       color = 0x000000;
     }
-    var geometry = new THREE.CubeGeometry(5, 5, 5);    
+    var geometry = new THREE.CubeGeometry(5, 5, 5);
     var material = new THREE.MeshLambertMaterial({ color: color });
     var object = new THREE.Mesh(geometry, material);
     object.eulerOrder = 'YXZ';
