@@ -1,3 +1,4 @@
+// Utilities
 var __bind = function(fn, me) {
   return function() {
     return fn.apply(me, arguments);
@@ -26,15 +27,6 @@ Uint8Array.prototype.average = function() {
   return this.sum() / this.length;
 };
 
-var CHANNELS = {
-  X_POSITION: 1,
-  Y_POSITION: 2,
-  Z_POSITION: 3,
-  X_ROTATION: 4,
-  Y_ROTATION: 5,
-  Z_ROTATION: 6
-};
-
 var Node = (function() {
   function Node(name, parent) {
     this.name = name;
@@ -45,29 +37,32 @@ var Node = (function() {
     this.translation = new THREE.Vector3();
     this.rotation = new THREE.Vector3();
   }
+  
   Node.prototype.isRoot = function() {
     return !this.parent;
   };
+  
   Node.prototype.isSite = function() {
     return this.children.length === 0;
   };
+  
   Node.prototype.update = function(index, frame) {
     this.translation.set(0, 0, 0);
     this.rotation.set(0, 0, 0);
     for (var i = 0; i < this.channels.length; i++) {
       var channel = this.channels[i],
           v = frame[index];
-      if (channel === CHANNELS.X_POSITION) {
+      if (channel === "Xposition") {
         this.translation.x = v;
-      } else if (channel === CHANNELS.Y_POSITION) {
+      } else if (channel === "Yposition") {
         this.translation.y = v;
-      } else if (channel === CHANNELS.Z_POSITION) {
+      } else if (channel === "Zposition") {
         this.translation.z = v;
-      } else if (channel === CHANNELS.X_ROTATION) {
+      } else if (channel === "Xrotation") {
         this.rotation.x = v * Math.PI / 180;
-      } else if (channel === CHANNELS.Y_ROTATION) {
+      } else if (channel === "Yrotation") {
         this.rotation.y = v * Math.PI / 180;
-      } else if (channel === CHANNELS.Z_ROTATION) {
+      } else if (channel === "Zrotation") {
         this.rotation.z = v * Math.PI / 180;
       }
       index++;
@@ -81,6 +76,7 @@ var Node = (function() {
 
     return index;
   };
+  
   Node.prototype.cout = function(indent) {
     if (!indent) {
       indent = "";
@@ -103,6 +99,7 @@ var Bvh = (function() {
     this.frames = [];
     this.joints = [];
   }
+  
   Bvh.prototype.update = function(pos) {
     if (pos >= 0 && pos < this.frames.length) {
       var frame = this.frames[pos];
@@ -148,19 +145,7 @@ var Parser = (function() {
           if (fields.length > 2) {
             for (var j = 2; j < fields.length; j++) {
               var field = fields[j];
-              if (field === "Xposition") {
-                joint.channels.push(CHANNELS.X_POSITION);
-              } else if (field === "Yposition") {
-                joint.channels.push(CHANNELS.Y_POSITION);
-              } else if (field === "Zposition") {
-                joint.channels.push(CHANNELS.Z_POSITION);
-              } else if (field === "Xrotation") {
-                joint.channels.push(CHANNELS.X_ROTATION);
-              } else if (field === "Yrotation") {
-                joint.channels.push(CHANNELS.Y_ROTATION);
-              } else if (field === "Zrotation") {
-                joint.channels.push(CHANNELS.Z_ROTATION);
-              }
+              joint.channels.push(field);
             }
           }
           break;
@@ -207,48 +192,13 @@ var Parser = (function() {
   return Parser;
 })();
 
-jQuery(function($) {
-  var perfume = new Perfume();
-  perfume.init();
-  
-  $(document).mousemove(__bind(perfume.onMouseMove, perfume));
-
-  var loaded = 0;
-  function loadBvh(path) {
-    $.get(path, function(data) {
-      var parser = new Parser(data);
-      bvh = parser.parse();
-      bvh.update();
-      bvh.root.cout();
-      
-      perfume.addBvh(bvh);
-
-      loaded++;
-      if (loaded === 4) {
-        perfume.start();
-      }
-    });
-  }
-  loadBvh("bvhfiles/aachan.bvh");
-  loadBvh("bvhfiles/kashiyuka.bvh");
-  loadBvh("bvhfiles/nocchi.bvh");
-  
-  var soundPlayer = new SoundPlayer();
-  perfume.audio = soundPlayer;
-  soundPlayer.init(function() {
-    loaded++;
-    if (loaded === 4) {
-      perfume.start();
-    }
-  });
-});
-
 var SoundPlayer = (function() {
   function SoundPlayer() {
     
   }
+  
   SoundPlayer.prototype.init = function(callback) {
-    this.context = new (window.AudioContext || window.webkitAudioContext)();
+    this.context = new (window.WindowAudioContext || window.webkitAudioContext)();
     
     var self = this;
     var xhr = new XMLHttpRequest();
@@ -265,6 +215,7 @@ var SoundPlayer = (function() {
     };
     xhr.send();    
   };
+  
   SoundPlayer.prototype.play = function() {
     this.analyser = this.context.createAnalyser();
     this.source.connect(this.analyser);
@@ -272,9 +223,11 @@ var SoundPlayer = (function() {
     
     this.source.noteOn(0);
   };
+  
   SoundPlayer.prototype.isReady = function() {
     return !!this.source;
   };
+  
   SoundPlayer.prototype.fft = function() {
     var freqByteData = new Uint8Array(this.analyser.frequencyBinCount);
     //analyser.getByteTimeDomainData(freqByteData);
@@ -418,3 +371,37 @@ var Perfume = (function() {
   return Perfume;
 })();
 
+jQuery(function($) {
+  var perfume = new Perfume();
+  perfume.init();
+  
+  $(document).mousemove(__bind(perfume.onMouseMove, perfume));
+
+  var loaded = 0;
+  function resourceLoaded() {
+  	loaded++;
+  	if (loaded === 4) {
+      perfume.start();
+    }
+  }
+  
+  function loadBvh(path) {
+    $.get(path, function(data) {
+      var parser = new Parser(data);
+      bvh = parser.parse();
+      bvh.update();
+      bvh.root.cout();
+      
+      perfume.addBvh(bvh);
+      
+      resourceLoaded();
+    });
+  }
+  loadBvh("bvhfiles/aachan.bvh");
+  loadBvh("bvhfiles/kashiyuka.bvh");
+  loadBvh("bvhfiles/nocchi.bvh");
+  
+  var soundPlayer = new SoundPlayer();
+  perfume.audio = soundPlayer;
+  soundPlayer.init(resourceLoaded);
+});
