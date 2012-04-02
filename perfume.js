@@ -67,9 +67,9 @@ var Node = (function() {
       }
       index++;
     }
-
+    
     this.translation.addSelf(this.initialOffset);
-
+        
     for (var i = 0; i < this.children.length; i++) {
       index = this.children[i].update(index, frame);
     }
@@ -208,6 +208,7 @@ var SoundPlayer = (function() {
       self.context.decodeAudioData(xhr.response, function(buffer) {
         self.source = self.context.createBufferSource();
         self.source.buffer = buffer;
+        self.source.loop = true;
         callback();
       }, function() {
         console.log("Failed to load sounds.");
@@ -246,12 +247,11 @@ var Perfume = (function() {
     this.mouseX = 0;
     this.mouseY = 0;
     this.bvhs = [];
-    
-    this.prevPos = 1000000;
   }
   
   Perfume.prototype.start = function() {
     this.startTime = new Date().getTime();
+    this.audio.play();
     this.animate();
   };
 
@@ -260,7 +260,21 @@ var Perfume = (function() {
     bvh.objects = [];
     this.addNode(bvh.root, this.scene, bvh.objects);
   };
-
+  
+  Perfume.prototype.addLine = function(x1, y1, z1, x2, y2, z2) {
+    var mat = new THREE.LineBasicMaterial({
+      color: 0xffffff,
+      opacity: 1.0,
+      linewidth: 1,
+      blending: THREE.AdditiveBlending
+    });
+    var geo = new THREE.Geometry();
+    geo.vertices.push(new THREE.Vertex(new THREE.Vector3(x1, y1, z1)));
+    geo.vertices.push(new THREE.Vertex(new THREE.Vector3(x2, y2, z2)));
+    var line = new THREE.Line(geo, mat);
+    this.scene.add(line);
+  }
+  
   Perfume.prototype.init = function() {
     this.container = document.createElement('div');
     document.body.appendChild(this.container);
@@ -271,6 +285,10 @@ var Perfume = (function() {
     this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 10000);
     this.camera.position.set(0, 300, 500);
     this.scene.add(this.camera);
+    
+    // Add ground
+    this.addLine(0, 0, -100, 0, 0, 100);
+    this.addLine(-100, 0, 0, 100, 0, 0);
     
     // Add lights
     var light = new THREE.DirectionalLight(0xffffff, 2);
@@ -303,18 +321,31 @@ var Perfume = (function() {
     } else if (joint.isSite()) {
       color = 0xffff00;
     } else {
-      color = 0x000000;
+      color = 0xffffff;
     }
-    var geometry = new THREE.CubeGeometry(5, 5, 5);
-    var material = new THREE.MeshLambertMaterial({ color: color });
-    var object = new THREE.Mesh(geometry, material);
+    var geometry = new THREE.CubeGeometry(5, 5, 5),
+        material = new THREE.MeshLambertMaterial({ color: color }),
+        object = new THREE.Mesh(geometry, material);
     object.eulerOrder = 'YXZ';
     
     parentNode.add(object);
     objects.push(object);
 
     for (var i = 0; i < joint.children.length; i++) {
-      this.addNode(joint.children[i], object, objects);
+      var child = joint.children[i];
+      this.addNode(child, object, objects);
+      
+      var mat = new THREE.LineBasicMaterial({
+        color: 0xffffff,
+        opacity: 1.0,
+        linewidth: 1,
+        blending: THREE.AdditiveBlending
+      });
+      var geo = new THREE.Geometry();
+      geo.vertices.push(new THREE.Vertex(new THREE.Vector3()));
+      geo.vertices.push(new THREE.Vertex(child.initialOffset));
+      var line = new THREE.Line(geo, mat);
+      object.add(line);
     }
   };
   
@@ -325,12 +356,7 @@ var Perfume = (function() {
         frameCount = this.bvhs[0].frames.length,
         frameTime = this.bvhs[0].frameTime,
         pos = Math.floor(dt / 1000.0 / frameTime) % frameCount;
-    
-    if (pos < this.prevPos && this.audio.isReady()) {
-      this.audio.play();
-    }
-    this.prevPos = pos;
-    
+        
     this.noise = this.audio.fft();
 
     for (var i = 0; i < this.bvhs.length; i++) {
@@ -342,9 +368,9 @@ var Perfume = (function() {
         var joint = bvh.joints[j];
         
         object.position.copy(joint.translation);
-        object.position.x += (Math.random() - 0.5) * this.noise * 0.01;
-        object.position.y += (Math.random() - 0.5) * this.noise * 0.01;
-        object.position.z += (Math.random() - 0.5) * this.noise * 0.01;
+        //object.position.x += (Math.random() - 0.5) * this.noise * 0.01;
+        //object.position.y += (Math.random() - 0.5) * this.noise * 0.01;
+        //object.position.z += (Math.random() - 0.5) * this.noise * 0.01;
         object.rotation.copy(joint.rotation);
       }
     }
