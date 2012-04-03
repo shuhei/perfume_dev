@@ -205,16 +205,16 @@ var Parser = (function() {
 })();
 
 var SoundPlayer = (function() {
-  function SoundPlayer() {
-    
+  function SoundPlayer(file) {
+    this.file = file;
   }
   
   SoundPlayer.prototype.init = function(callback) {
     this.context = new (window.WindowAudioContext || window.webkitAudioContext)();
     
-    var self = this;
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', "Perfume_globalsite_sound.wav", true);
+    var self = this,
+        xhr = new XMLHttpRequest();
+    xhr.open('GET', this.file, true);
     xhr.responseType = 'arraybuffer';
     xhr.onload = function() {
       self.context.decodeAudioData(xhr.response, function(buffer) {
@@ -257,7 +257,7 @@ var SoundPlayer = (function() {
 var Perfume = (function() {
   function Perfume() {
     this.objects = [];
-    this.radius = 300;
+    this.radius = 100;
     this.theta = 0;
     this.mouseX = 0;
     this.mouseY = 0;
@@ -459,7 +459,7 @@ jQuery(function($) {
   loadBvh("bvhfiles/kashiyuka.bvh");
   loadBvh("bvhfiles/nocchi.bvh");
   
-  var soundPlayer = new SoundPlayer();
+  var soundPlayer = new SoundPlayer("Perfume_globalsite_sound.wav");
   perfume.audio = soundPlayer;
   soundPlayer.init(resourceLoaded);
 });
