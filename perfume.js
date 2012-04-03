@@ -36,6 +36,8 @@ var Node = (function() {
     this.initialOffset = new THREE.Vector3();
     this.translation = new THREE.Vector3();
     this.rotation = new THREE.Vector3();
+    this.matrix = new THREE.Matrix4();
+    this.globalMatrix = new THREE.Matrix4();
   }
   
   Node.prototype.isRoot = function() {
@@ -69,7 +71,16 @@ var Node = (function() {
     }
     
     this.translation.addSelf(this.initialOffset);
-        
+    
+    this.matrix.identity();
+    this.matrix.translate(this.translation);
+    this.matrix.setRotationFromEuler(this.rotation, 'YXZ');
+    
+    this.globalMatrix.copy(this.matrix);
+    if (!!this.parent) {
+      this.globalMatrix.multiplySelf(this.parent.globalMatrix);
+    }
+    
     for (var i = 0; i < this.children.length; i++) {
       index = this.children[i].update(index, frame);
     }
