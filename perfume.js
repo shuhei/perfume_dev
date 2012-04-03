@@ -182,6 +182,7 @@ var Parser = (function() {
         break;
       }
     }
+    console.log("Frame count: " + frameCount + ", frame time: " + bvh.frameTime + ", total time: " + frameCount * bvh.frameTime);
 
     while (line = lines[i++]) {
       var fields = line.split(" "),
@@ -240,7 +241,7 @@ var SoundPlayer = (function() {
     return !!this.source;
   };
   
-  SoundPlayer.prototype.fft = function() {
+  SoundPlayer.prototype.volume = function() {
     var freqByteData = new Uint8Array(this.analyser.frequencyBinCount);
     //analyser.getByteTimeDomainData(freqByteData);
     this.analyser.getByteFrequencyData(freqByteData);
@@ -272,9 +273,9 @@ var Perfume = (function() {
     this.addNode(bvh.root, this.scene, bvh.objects);
   };
   
-  Perfume.prototype.addLine = function(x1, y1, z1, x2, y2, z2) {
+  Perfume.prototype.createLine = function(x1, y1, z1, x2, y2, z2) {
     var mat = new THREE.LineBasicMaterial({
-      color: 0xffffff,
+      color: 0x999999,
       opacity: 1.0,
       linewidth: 1,
       blending: THREE.AdditiveBlending
@@ -283,7 +284,7 @@ var Perfume = (function() {
     geo.vertices.push(new THREE.Vertex(new THREE.Vector3(x1, y1, z1)));
     geo.vertices.push(new THREE.Vertex(new THREE.Vector3(x2, y2, z2)));
     var line = new THREE.Line(geo, mat);
-    this.scene.add(line);
+    return line;
   }
   
   Perfume.prototype.init = function() {
@@ -298,8 +299,13 @@ var Perfume = (function() {
     this.scene.add(this.camera);
     
     // Add ground
-    this.addLine(0, 0, -100, 0, 0, 100);
-    this.addLine(-100, 0, 0, 100, 0, 0);
+    this.ground = new THREE.Object3D();
+    this.scene.add(this.ground);
+    var num = 100;
+    for (var i = 0; i < num; i++) {
+      var angle = i * Math.PI * 2 / num;
+      this.ground.add(this.createLine(0, 0, 0, 100 * Math.cos(angle), 0, 100 * Math.sin(angle)));
+    }
     
     // Add lights
     var light = new THREE.DirectionalLight(0xffffff, 2);
@@ -367,8 +373,9 @@ var Perfume = (function() {
         frameCount = this.bvhs[0].frames.length,
         frameTime = this.bvhs[0].frameTime,
         pos = Math.floor(dt / 1000.0 / frameTime) % frameCount;
-        
-    this.noise = this.audio.fft();
+    
+    var vol = Math.pow(this.audio.volume() / 255, 2) * 10;
+    this.ground.scale.set(vol, 1, vol);
 
     for (var i = 0; i < this.bvhs.length; i++) {
       var bvh = this.bvhs[i];
@@ -379,9 +386,6 @@ var Perfume = (function() {
         var joint = bvh.joints[j];
         
         object.position.copy(joint.translation);
-        //object.position.x += (Math.random() - 0.5) * this.noise * 0.01;
-        //object.position.y += (Math.random() - 0.5) * this.noise * 0.01;
-        //object.position.z += (Math.random() - 0.5) * this.noise * 0.01;
         object.rotation.copy(joint.rotation);
       }
     }
