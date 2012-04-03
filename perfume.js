@@ -218,9 +218,7 @@ var SoundPlayer = (function() {
     xhr.responseType = 'arraybuffer';
     xhr.onload = function() {
       self.context.decodeAudioData(xhr.response, function(buffer) {
-        self.source = self.context.createBufferSource();
-        self.source.buffer = buffer;
-        self.source.loop = true;
+        self.buffer = buffer;
         callback();
       }, function() {
         console.log("Failed to load sounds.");
@@ -230,6 +228,8 @@ var SoundPlayer = (function() {
   };
   
   SoundPlayer.prototype.play = function() {
+    this.source = this.context.createBufferSource();
+    this.source.buffer = this.buffer;
     this.analyser = this.context.createAnalyser();
     this.source.connect(this.analyser);
     this.analyser.connect(this.context.destination);
@@ -262,11 +262,11 @@ var Perfume = (function() {
     this.mouseX = 0;
     this.mouseY = 0;
     this.bvhs = [];
+    this.prevPos = 1000000000;
   }
   
   Perfume.prototype.start = function() {
     this.startTime = new Date().getTime();
-    this.audio.play();
     this.animate();
   };
 
@@ -383,6 +383,11 @@ var Perfume = (function() {
         frameTime = this.bvhs[0].frameTime,
         pos = Math.floor(dt / 1000.0 / frameTime) % frameCount;
     
+    if (pos < this.prevPos) {
+      this.audio.play();
+    }
+    this.prevPos = pos;
+
     var fft = this.audio.fft();
     for (var i = 0; i < 256; i++) {
       var vol = Math.pow(fft[i] / 255, 2) * 5;
