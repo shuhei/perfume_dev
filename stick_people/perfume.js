@@ -338,8 +338,18 @@ var Perfume = (function() {
     this.stats.domElement.style.position = 'absolute';
     this.stats.domElement.style.top = '0px';
     this.container.appendChild(this.stats.domElement);
+
+    window.addEventListener('resize', __bind(this.onResize, this));
   };
-  
+
+  Perfume.prototype.onResize = function(e) {
+    var w = window.innerWidth,
+        h = window.innerHeight;
+    this.renderer.setSize(w, h);
+    this.camera.aspect = w / h;
+    this.camera.updateProjectionMatrix();
+  };
+
   Perfume.prototype.addNode = function(joint, parentNode, objects) {
     var color;
     if (joint.isRoot()) {
