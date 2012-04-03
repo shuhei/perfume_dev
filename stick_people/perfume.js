@@ -82,7 +82,7 @@
       this.matrix.translate(this.translation);
       this.matrix.setRotationFromEuler(this.rotation, 'YXZ');
       this.globalMatrix.copy(this.matrix);
-      if (!!this.parent) this.globalMatrix.multiplySelf(this.parent.globalMatrix);
+      if (this.parent) this.globalMatrix.multiplySelf(this.parent.globalMatrix);
       _ref2 = this.children;
       for (_j = 0, _len2 = _ref2.length; _j < _len2; _j++) {
         child = _ref2[_j];

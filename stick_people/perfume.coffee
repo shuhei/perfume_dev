@@ -14,7 +14,7 @@ Uint8Array.prototype.sum = ->
   sum
 
 Uint8Array.prototype.average = ->
-  this.sum() / this.length
+  @sum() / this.length
 
 class Node
   constructor: (@name, @parent) ->
@@ -53,11 +53,9 @@ class Node
     @matrix.setRotationFromEuler @rotation, 'YXZ'
     
     @globalMatrix.copy @matrix
-    if !!@parent
-      @globalMatrix.multiplySelf @parent.globalMatrix
-    
-    for child in @children
-      index = child.update index, frame
+    @globalMatrix.multiplySelf @parent.globalMatrix if @parent
+
+    index = child.update index, frame for child in @children
 
     index
   
@@ -108,8 +106,7 @@ class Parser
           joint.initialOffset.set ox, oy, oz
         when "CHANNELS"
           if fields.length > 2
-            for field in fields[2..]
-              joint.channels.push(field)
+            joint.channels.push field for field in fields[2..]
         when "}"
           joint = joint.parent
           if !joint
@@ -132,8 +129,7 @@ class Parser
       fields = line.split " "
       frame = []
       if fields.length > 0
-        for field in fields
-          frame.push parseFloat(field)
+        frame.push parseFloat(field) for field in fields
         bvh.frames.push frame
 
     throw "Invalid frames! frame count: " + frameCount + ", bvh: " + bvh.frames.length unless frameCount == bvh.frames.length
@@ -146,7 +142,7 @@ class SoundPlayer
   init: (callback) ->
     @context = new (window.WindowAudioContext || window.webkitAudioContext)
     xhr = new XMLHttpRequest
-    xhr.open 'GET', this.file, true
+    xhr.open 'GET', @file, true
     xhr.responseType = 'arraybuffer'
     xhr.onload = =>
       @context.decodeAudioData xhr.response,
@@ -167,7 +163,7 @@ class SoundPlayer
     @source.noteOn 0
   
   isReady: ->
-    return !!this.source
+    !!this.source
   
   fft: ->
     freqByteData = new Uint8Array @analyser.frequencyBinCount
