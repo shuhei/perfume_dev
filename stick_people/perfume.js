@@ -257,7 +257,7 @@ var SoundPlayer = (function() {
 var Perfume = (function() {
   function Perfume() {
     this.objects = [];
-    this.radius = 100;
+    this.radius = 300;
     this.theta = 0;
     this.mouseX = 0;
     this.mouseY = 0;
@@ -413,8 +413,9 @@ var Perfume = (function() {
 
   Perfume.prototype.render = function() {
     var $window = $(window);
-    this.camera.position.x = this.radius * this.mouseX / $window.width();
-    this.camera.position.y = this.radius * this.mouseY / $window.height();
+    this.camera.position.x = this.radius * Math.sin(Math.PI * 2 * this.mouseX / $window.width());
+    this.camera.position.y = this.radius * Math.cos(Math.PI / 2 * this.mouseY / $window.height());
+    this.camera.position.z = this.radius * Math.cos(Math.PI * 2 * this.mouseX / $window.width());
 
     this.camera.lookAt(this.scene.position);
 
