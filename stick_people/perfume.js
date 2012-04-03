@@ -455,11 +455,11 @@ jQuery(function($) {
       resourceLoaded();
     });
   }
-  loadBvh("bvhfiles/aachan.bvh");
-  loadBvh("bvhfiles/kashiyuka.bvh");
-  loadBvh("bvhfiles/nocchi.bvh");
+  loadBvh("../data/bvhfiles/aachan.bvh");
+  loadBvh("../data/bvhfiles/kashiyuka.bvh");
+  loadBvh("../data/bvhfiles/nocchi.bvh");
   
-  var soundPlayer = new SoundPlayer("Perfume_globalsite_sound.wav");
+  var soundPlayer = new SoundPlayer("../data/Perfume_globalsite_sound.wav");
   perfume.audio = soundPlayer;
   soundPlayer.init(resourceLoaded);
 });
