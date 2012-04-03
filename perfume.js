@@ -241,11 +241,14 @@ var SoundPlayer = (function() {
     return !!this.source;
   };
   
-  SoundPlayer.prototype.volume = function() {
+  SoundPlayer.prototype.fft = function() {
     var freqByteData = new Uint8Array(this.analyser.frequencyBinCount);
-    //analyser.getByteTimeDomainData(freqByteData);
     this.analyser.getByteFrequencyData(freqByteData);
-    return freqByteData.average();
+    return freqByteData;
+  };
+
+  SoundPlayer.prototype.volume = function() {
+    return this.fft().average();
   };
   
   return SoundPlayer;
@@ -273,9 +276,9 @@ var Perfume = (function() {
     this.addNode(bvh.root, this.scene, bvh.objects);
   };
   
-  Perfume.prototype.createLine = function(x1, y1, z1, x2, y2, z2) {
+  Perfume.prototype.createLine = function(x1, y1, z1, x2, y2, z2, color) {
     var mat = new THREE.LineBasicMaterial({
-      color: 0x999999,
+      color: color || 0x999999,
       opacity: 1.0,
       linewidth: 1,
       blending: THREE.AdditiveBlending
@@ -298,13 +301,19 @@ var Perfume = (function() {
     this.camera.position.set(0, 300, 500);
     this.scene.add(this.camera);
     
-    // Add ground
-    this.ground = new THREE.Object3D();
-    this.scene.add(this.ground);
-    var num = 100;
+    // Add grounds
+    var num = 256;
+    this.grounds = [];
     for (var i = 0; i < num; i++) {
-      var angle = i * Math.PI * 2 / num;
-      this.ground.add(this.createLine(0, 0, 0, 100 * Math.cos(angle), 0, 100 * Math.sin(angle)));
+      var angle = i * Math.PI * 2 / num + Math.PI,
+          color = new THREE.Color().setHSV(i / 255, 1, 0.8).getHex(),
+          line = this.createLine(
+            0, 0, 0,
+            100 * Math.cos(angle), 0, 100 * Math.sin(angle),
+            color
+          );
+      this.scene.add(line);
+      this.grounds.push(line);
     }
     
     // Add lights
@@ -374,8 +383,11 @@ var Perfume = (function() {
         frameTime = this.bvhs[0].frameTime,
         pos = Math.floor(dt / 1000.0 / frameTime) % frameCount;
     
-    var vol = Math.pow(this.audio.volume() / 255, 2) * 10;
-    this.ground.scale.set(vol, 1, vol);
+    var fft = this.audio.fft();
+    for (var i = 0; i < 256; i++) {
+      var vol = Math.pow(fft[i] / 255, 2) * 5;
+      this.grounds[i].scale.set(vol, 1, vol);
+    }
 
     for (var i = 0; i < this.bvhs.length; i++) {
       var bvh = this.bvhs[i];
