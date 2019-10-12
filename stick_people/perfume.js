@@ -218,7 +218,7 @@
     SoundPlayer.prototype.init = function(callback) {
       var xhr,
         _this = this;
-      this.context = new (window.WindowAudioContext || window.webkitAudioContext);
+      this.context = new (window.AudioContext || window.webkitAudioContext);
       xhr = new XMLHttpRequest;
       xhr.open('GET', this.file, true);
       xhr.responseType = 'arraybuffer';
@@ -239,7 +239,7 @@
       this.analyser = this.context.createAnalyser();
       this.source.connect(this.analyser);
       this.analyser.connect(this.context.destination);
-      return this.source.noteOn(0);
+      return this.source.start(0);
     };
 
     SoundPlayer.prototype.isReady = function() {

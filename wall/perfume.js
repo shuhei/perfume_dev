@@ -210,7 +210,7 @@ var SoundPlayer = (function() {
   }
   
   SoundPlayer.prototype.init = function(callback) {
-    this.context = new (window.WindowAudioContext || window.webkitAudioContext)();
+    this.context = new (window.AudioContext || window.webkitAudioContext)();
     
     var self = this,
         xhr = new XMLHttpRequest();
@@ -234,7 +234,7 @@ var SoundPlayer = (function() {
     this.source.connect(this.analyser);
     this.analyser.connect(this.context.destination);
     
-    this.source.noteOn(0);
+    this.source.start(0);
   };
   
   SoundPlayer.prototype.isReady = function() {
